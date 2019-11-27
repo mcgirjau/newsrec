@@ -26,8 +26,13 @@ server <- function(input, output) {
         if (input$signup > 0) {
           username <- isolate(input$username)
           password <- isolate(input$password)
-          .register(username, password)
-          USER$logged_in <- TRUE
+          if (!(.username_exists(username))) {
+            .register(username, password)
+            USER$logged_in <- TRUE
+          } else {
+            shinyjs::toggle(id = "existing", anim = TRUE, time = 1, animType = "fade")
+            shinyjs::delay(3000, shinyjs::toggle(id = "existing", anim = TRUE, time = 1, animType = "fade"))
+          }
         } 
       }
     }    
@@ -41,24 +46,27 @@ server <- function(input, output) {
     )
   })
   
-  output$sidebarpanel <- renderUI({
-    if (USER$login == TRUE ){ 
+  output$sidebar <- renderUI({
+    if (USER$logged_in){ 
       sidebarMenu(
-        menuItem("Main Page", tabName = "dashboard", icon = icon("dashboard"))
+        menuItem("Train", tabName = "train", icon = icon("brain")),
+        menuItem("Explore", tabName = "explore", icon = icon("newspaper"))
       )
     }
   })
   
   output$body <- renderUI({
-    if (USER$login == TRUE ) {
-      tabItem(tabName ="dashboard", class = "active",
-              fluidRow(
-                box(width = 12, dataTableOutput('results'))
-              ))
-    }
-    else {
-      loginpage
+    if (USER$logged_in) {
+      tabItem(
+        tabName = "train", 
+        class = "active"
+      )
+      tabItem(
+        tabName = "explore",
+        class = "active"
+      )
+    } else {
+      login_page
     }
   })
-  
 }

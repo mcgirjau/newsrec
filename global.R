@@ -13,15 +13,18 @@
 library(shiny)
 library(shinydashboard)
 library(shinyjs)
-library(sodium)
 library(mongolite)
+library(dplyr)
+
+# Load news recommendation engine
+source("engine.R")
 
 # Head
 head <- tags$head(
   tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
 )
 
-# Establish MongoDB connection
+# MongoDB connection URL
 url <- paste0("mongodb://admin:example@", # authentication
               "newsrec-shard-00-00-t0scv.mongodb.net:27017,", # host 1 & port
               "newsrec-shard-00-01-t0scv.mongodb.net:27017,", # host 2 & port
@@ -32,15 +35,15 @@ url <- paste0("mongodb://admin:example@", # authentication
               "&authSource=admin",
               "&retryWrites=true",
               "&w=majority")
-  
-con <- mongo(collection = "users", db = "users", url = url)
-users <- con$find()
 
 # Function to check for valid user
-.verify <- function(username, password) {
-  if (username %in% users$username) {
-    user <- users[username == username]
-    if (user$password == password) {
+.verify <- function(u, p) {
+  con <- mongo(collection = "users", db = "users", url = url)
+  users <- con$find()
+  if (u %in% users$username) {
+    user <- users %>%
+      filter(username == u)
+    if (user$password == p) {
       return(TRUE)
     }
   }
@@ -48,7 +51,52 @@ users <- con$find()
 }
 
 # Function to register a user
-.register <- function(username, password) {
-  user <- data.frame(username = username, password = password)
+.register <- function(u, p) {
+  con <- mongo(collection = "users", db = "users", url = url)
+  user <- data.frame(username = u, password = p)
   con$insert(user)
 }
+
+# Function to check if a username exists
+.username_exists <- function(u) {
+  con <- mongo(collection = "users", db = "users", url = url)
+  users <- con$find()
+  if (u %in% users$username) {
+    return(TRUE)
+  } else {
+    return(FALSE)
+  }
+}
+
+# Login page
+login_page <- div(
+  id = "login-page",
+  wellPanel(
+    tags$h2("Log In or Sign Up", class = "text-center"),
+    textInput(inputId = "username", 
+              placeholder = "Username", 
+              label = tagList(icon("user"), "Username")),
+    passwordInput(inputId = "password", 
+                  placeholder = "Password", 
+                  label = tagList(icon("unlock-alt"), "Password")),
+    br(),
+    div(
+      class = "text-center",
+      div(
+        actionButton(inputId = "login", class = "button", "LOG IN"),
+        actionButton(inputId = "signup", class = "button", "SIGN UP"),
+      ),
+      br(),
+      shinyjs::hidden(
+        div(
+          id = "incorrect",
+          p(class = "text-center error", "Incorrect username or password.")
+        ),
+        div(
+          id = "existing",
+          p(class = "text-center error", "Username already exists.")
+        )
+      )
+    )
+  )
+)
