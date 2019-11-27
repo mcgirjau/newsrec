@@ -1,0 +1,41 @@
+---
+title: "Technical Report"
+author: "Maria-Cristiana Gîrjău, Sirig Gurung"
+date: "11 December 2019"
+output: 
+  pdf_document:
+    toc: TRUE
+---
+
+# Introduction
+
+# API Wrapper Package
+
+Name: newspapr
+
+Philosophy: highly defensive coding - there's checks for all arguments passed
+
+Provides functions for NewsAPI. Returns tibbles.
+
+# Recommender System
+
+- implemented through Shiny app
+- has authentication 
+- have to train the system first so there's data to create logistic regression model
+
+## Model
+
+- logistic regression model predicting probability a user will like some news article
+- predictors:
+  - readability level (see how to leverage some API or R package)
+  - length (scrape text using rvest)
+  - categories (e.g. Fashion, Sports, tech)
+  - sentiment (positive/negative - use Bing and AFINN scores)
+  - sensationalism level (Andrea Boskovic's project)
+  - languages
+
+# Storing User Data
+
+- MongoDB database
+- stores each news link with its statistics, and whether the user liked it or not
+- imported as data frame using mongolite package
