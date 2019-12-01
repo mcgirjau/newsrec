@@ -23,7 +23,7 @@ Provides functions for NewsAPI. Returns tibbles.
 - has authentication 
 - have to train the system first so there's data to create logistic regression model
 
-## Model
+# Model
 
 - logistic regression model predicting probability a user will like some news article
 - predictors:
@@ -38,3 +38,8 @@ Provides functions for NewsAPI. Returns tibbles.
 - MongoDB database
 - stores each news link with its statistics, and whether the user liked it or not
 - imported as data frame using mongolite package
+
+# Asynchronous Programming
+
+# Dynamic UI
+
