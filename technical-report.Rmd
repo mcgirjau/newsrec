@@ -27,11 +27,10 @@ Provides functions for NewsAPI. Returns tibbles.
 
 - logistic regression model predicting probability a user will like some news article
 - predictors:
-  - readability level (see how to leverage some API or R package)
-  - length (scrape text using rvest)
+  - readability level
+  - length
   - categories (e.g. Fashion, Sports, tech)
-  - sentiment (positive/negative - use Bing and AFINN scores)
-  - sensationalism level (Andrea Boskovic's project)
+  - sentiment
   - languages
 
 # Storing User Data

@@ -12,6 +12,13 @@ knitr::opts_chunk$set(echo = TRUE)
 
 A news recommendation system written in R and deployed as an online Shiny application.
 
+## Getting Started
+
+To use the News Recommendation System, you need two API keys
+
+- write description of how it works
+- what's needed
+
 ## Usage
 
 To use the system, you must first create an account, optionally specifying preferences such as language. When you log in for the first time, the system will generate a random sample of current news articles from a variety of sources. You must train the system by marking each article as a "Like" or as a "Dislike". All of your choices will be remembered, unless you choose to flush the system and start again. The longer you train the system, the more well-tailored the recommendations will be to your taste.

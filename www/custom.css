@@ -37,3 +37,8 @@ a {
 a:hover {
   color: gray;
 }
+
+.article {
+  border-right: 10px solid black;
+  border-bottom: 10px solid black;
+}
