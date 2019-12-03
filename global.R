@@ -338,7 +338,7 @@ explore_page <- tabItem(
       )
     ),
     mainPanel(
-      uiOutput("recommend")
+      withSpinner(uiOutput("recommend"), type = 1, color = "purple")
     )
   )
 )
