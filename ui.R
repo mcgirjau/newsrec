@@ -1,12 +1,12 @@
-header <- dashboardHeader(title = "News Recommender", uiOutput("logout"))
+dashboard_header <- dashboardHeader(title = "News Recommender", uiOutput("logout"))
 
-sidebar <- dashboardSidebar(uiOutput("sidebar"), collapsed = TRUE)
+dashboard_sidebar <- dashboardSidebar(uiOutput("sidebar"), collapsed = TRUE)
 
-body <- dashboardBody(head, shinyjs::useShinyjs(), uiOutput("body"))
+dashboard_body <- dashboardBody(head, shinyjs::useShinyjs(), uiOutput("body"))
 
 ui <- dashboardPage(
-  header = header,
-  sidebar = sidebar,
-  body = body,
+  header = dashboard_header,
+  sidebar = dashboard_sidebar,
+  body = dashboard_body,
   skin = "purple"
 )

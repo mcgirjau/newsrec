@@ -1,34 +1,40 @@
+# #############################################################################
+#
+# SETUP
+#
+# #############################################################################
+
 # Load required packages
 library(dplyr)
-library(future)
+library(future) # asynchronous programming
+library(future.apply) # asynchronous programming (apply functions)
 library(httr)
 library(lubridate)
-library(mongolite)
-library(newspapr)
+library(mongolite) # MongoDB connection
+library(newspapr) # NewsAPI wrapper package
 library(RCurl)
+library(readability) # readability scores
 library(RJSONIO)
-library(readability)
 library(shiny)
-library(shinycssloaders)
 library(shinydashboard)
 library(shinyjs)
 library(stringr)
 library(tidyr)
 library(tidytext)
 
-# Setting up asynchronous programming
+# Setting up asynchronous programming so that the app doesn't lag
 future::plan(multiprocess)
 
-# Links
+# Links to where one can obtain API keys for NewsAPI and Diffbot
 newsapi_url <- a("NewsAPI", href = "https://newsapi.org/register")
 diffbot_url <- a("Diffbot API", href = "https://www.diffbot.com/plans/trial")
 
-# Head
+# Link to the CSS style sheet (in www/ folder)
 head <- tags$head(
   tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
 )
 
-# MongoDB connection URL
+# MongoDB connection URL - DO NOT EDIT
 url <- paste0("mongodb://admin:example@", # authentication
               "newsrec-shard-00-00-t0scv.mongodb.net:27017,", # host 1 & port
               "newsrec-shard-00-01-t0scv.mongodb.net:27017,", # host 2 & port
@@ -40,38 +46,13 @@ url <- paste0("mongodb://admin:example@", # authentication
               "&retryWrites=true",
               "&w=majority")
 
-# Function to check for valid user
-.verify <- function(user, pass) {
-  con <- mongo(collection = "users", db = "users", url = url)
-  users <- con$find()
-  if (user %in% users$username) {
-    current_user <- users %>%
-      filter(username == user)
-    if (current_user$password == pass) {
-      return(TRUE)
-    }
-  }
-  return(FALSE)
-}
+# #############################################################################
+#
+# UTILITY FUNCTIONS
+#
+# #############################################################################
 
-# Function to register a user
-.register <- function(user, pass, news_key, diffbot_key) {
-  # Add user to 'users' collection
-  con <- mongolite::mongo(collection = "users", db = "users", url = url)
-  user <- data.frame(username = user, password = pass, NEWS_API_KEY = news_key, DIFFBOT_API_KEY = diffbot_key)
-  con$insert(user)
-}
-
-.set_keys <- function(user, pass) {
-  con <- mongo(collection = "users", db = "users", url = url)
-  users <- con$find()    
-  current_user <- users %>%
-    filter(username == user)
-  Sys.setenv(NEWS_API_KEY = current_user$NEWS_API_KEY)
-  Sys.setenv(DIFFBOT_API_KEY = current_user$DIFFBOT_API_KEY)
-}
-
-# Function to check if a username exists
+# Function to check if a username already exists in the MongoDB database
 .username_exists <- function(u) {
   con <- mongolite::mongo(collection = "users", db = "users", url = url)
   users <- con$find()
@@ -82,69 +63,162 @@ url <- paste0("mongodb://admin:example@", # authentication
   }
 }
 
-# Function to check Diffbot API key
-.check_diffbot <- function(key) {
-  url <- "https://www.cnn.com/2019/11/26/tech/google-employee-tensions/index.html"
-  query_url <- paste0("http://api.diffbot.com/v2/article?token=", key, "&url=", url)
-  code <- httr::GET(query_url) %>%
-    httr::status_code()
-  if (code == 200) {
-    return("All OK.")
-  } else {
-    return("Error.")
+# Function to check for valid user in MongoDB database
+.verify <- function(u, p) {
+  con <- mongolite::mongo(collection = "users", db = "users", url = url)
+  users <- con$find()
+  if (u %in% users$username) {
+    current_user <- users %>%
+      filter(username == u)
+    if (current_user$password == p) {
+      return(TRUE)
+    }
+  }
+  return(FALSE)
+}
+
+# Function to register a user in MongoDB database
+.register <- function(u, p, news_key, diffbot_key) {
+  # Add user to 'users' collection
+  con <- mongolite::mongo(collection = "users", db = "users", url = url)
+  user <- data.frame(
+    username = u, 
+    password = p, 
+    NEWS_API_KEY = news_key, 
+    DIFFBOT_API_KEY = diffbot_key
+  )
+  con$insert(user)
+}
+
+# Function to set the current user's API keys as environment variables
+.set_environment <- function(u) {
+  con <- mongo(collection = "users", db = "users", url = url)
+  users <- con$find()    
+  current_user <- users %>%
+    filter(username == u)
+  Sys.setenv(USERNAME = u)
+  Sys.setenv(NEWS_API_KEY = current_user$NEWS_API_KEY)
+  Sys.setenv(DIFFBOT_API_KEY = current_user$DIFFBOT_API_KEY)
+}
+
+# Function to check the validity of the API keys
+.valid_keys <- function(news_key, diffbot_key) {
+  # Mock URL to test the Diffbot API key
+  mock_url <- "https://www.cnn.com/2019/11/26/tech/google-employee-tensions/index.html"
+  query_url <- paste0("http://api.diffbot.com/v2/article?token=", diffbot_key, "&url=", mock_url)
+  outcome <- httr::GET(query_url) %>%
+    httr::content()
+  if (!is.null(outcome$errorCode)) {
+    return(FALSE)
+  }
+  # Using newspapr package to test NewsAPI key
+  result <- tryCatch({
+    newspapr::check_key(news_key)
+    return(TRUE)
+  }, error = function(e) {
+    return(FALSE)
+  })
+  return(result)
+}
+
+# Function to submit preferences to the MongoDB database
+.submit <- function(text, liked) {
+  if (!is.null(text)) {
+    article_data <- bind_cols(opinion = liked, 
+                              readability = .get_readability(text),
+                              length = .get_length(text),
+                              afinn_score = .get_sentiment(text)) %>%
+      mutate_all(replace_na, 0)
+    # Submit to database only if content isn't empty
+    con <- mongolite::mongo(collection = Sys.getenv("USERNAME"), db = "preferences", url = url)
+    con$insert(article_data)
   }
 }
 
+# #############################################################################
+#
+# TEXT METRICS
+#
+# #############################################################################
+
 # Function to get article text content using Diffbot API (REQUIRES KEY)
-.get_text <- function(url) {
+.get_text <- function(article_url) {
   DIFFBOT_KEY <- Sys.getenv("DIFFBOT_API_KEY")
-  query_url <- paste0("http://api.diffbot.com/v2/article?token=", DIFFBOT_KEY, "&url=", url)
+  query_url <- paste0("http://api.diffbot.com/v2/article?token=", DIFFBOT_KEY, 
+                      "&url=", article_url)
   text <- query_url %>%
     RCurl::getURL() %>%
     RJSONIO::fromJSON() %>%
+    as.list() %>%
     .$text
+  if (!is.null(text) && text == "") {
+    text <- NULL
+  }
   return(text)
 }
 
-################################################################################
-
-# Function to get Flesch-Kincaid Grade Level (a measure of readability)
+# Function to get Flesch-Kincaid Grade Level of article (readability metric)
 .get_readability <- function(text) {
   flesch_kincaid <- readability::readability(text, grouping.var = TRUE) %>%
     .$Flesch_Kincaid
   return(flesch_kincaid)
 }
 
-# Function to get length of article
+# Function to get length of article (in number of characters)
 .get_length <- function(text) {
   return(nchar(text))
 }
 
-# Function to get number of exclamation marks
-.get_exclamation <- function(text) {
-  exclamation <- stringr::str_count(text, pattern = "!")
-  return(exclamation)
-}
-
-# Function to get sentiments (based on NRC lexicon)
-.get_sentiments <- function(text) {
+# Function to get sentiments (based on AFINN lexicon) of article
+.get_sentiment <- function(text) {
+  # Clean up text and remove stop words
   text_tbl <- tibble(article = text) %>%
     tidytext::unnest_tokens(word, article) %>%
     dplyr::anti_join(stop_words)
   num_words <- nrow(text_tbl)
-  nrc_scores <- text_tbl %>%
-    inner_join(get_sentiments("nrc")) %>%
-    group_by(sentiment) %>% 
-    summarize(percentage = n() / num_words) %>%
-    spread(key = sentiment, value = percentage)
-  return(nrc_scores)
+  afinn_score <- text_tbl %>%
+    inner_join(tidytext::get_sentiments("afinn")) %>%
+    summarize(afinn_score = sum(value)) %>%
+    .$afinn_score
+  return(afinn_score)
 }
 
-################################################################################
+# Function to get metrics for a data frame of articles
+.get_metrics <- function(articles) {
+  metrics_list <- list()
+  # Use asychronous programming
+  metrics_list <- future.apply::future_lapply(1:nrow(articles), function(row) {
+    current_article <- articles[row, ]
+    text <- .get_text(current_article$url)
+    if (!is.null(text)) {
+      current_metrics <- current_article %>%
+        mutate(readability = .get_readability(text),
+               length = .get_length(text),
+               afinn_score = .get_sentiment(text)) %>%
+        select(readability, length, afinn_score)
+    } else {
+      current_metrics <- current_article %>%
+        mutate(readability = NA,
+               length = NA,
+               afinn_score = NA) %>%
+        select(readability, length, afinn_score)
+    }
+    return(current_metrics)
+  })
+  # Convert to data frame
+  all_metrics <- do.call(rbind.data.frame, metrics_list)
+  return(all_metrics)
+}
+
+# #############################################################################
+#
+# UI COMPONENTS
+#
+# #############################################################################
 
 # Login page
 login_page <- div(
-  id = "login-page",
+  id = "login-page", # for the CSS file
   wellPanel(
     tags$h2("Log In or Sign Up", class = "text-center"),
     textInput(inputId = "username", 
@@ -170,6 +244,7 @@ login_page <- div(
         actionButton(inputId = "signup", class = "button", "SIGN UP"),
       ),
       br(),
+      # Potential login errors
       shinyjs::hidden(
         div(
           id = "incorrect",
@@ -187,6 +262,7 @@ login_page <- div(
           id = "invalid",
           p(class = "text-center error", "Invalid API key(s).")
         ),
+        # Message to display as keys are being checked
         div(
           id = "wait",
           p(class = "text-center error", "Checking API keys... Please wait.")
@@ -204,13 +280,25 @@ train_page <- tabItem(
   sidebarLayout(
     sidebarPanel(
       h3("Instructions"),
-      p("This page is where you train the system. This means that you tell the system whether
-        or not you like certain articles, and then the system gives you output based on that."),
-      textInput(inputId = "keyword", 
-                label = "Please enter some keywords to generate a training set of articles",
+      p("This page is where you train the system. This means that you tell the 
+        system whether or not you like certain articles, and then the system 
+        gives you output based on that."),
+      textInput(inputId = "train_keyword", 
+                label = "Please enter some keywords",
                 placeholder = "e.g. Joe Biden"),
-      actionButton(inputId = "generate",
-                   label = "Generate Training Set")
+      div(
+        class = "text-center",
+        actionButton(inputId = "generate", label = "Generate Training Set"),
+        br(),
+        br(),
+        # Potential login errors
+        shinyjs::hidden(
+          div(
+            id = "notfound",
+            p(class = "text-center error", "No news found for this keyword.")
+          )
+        )
+      )
     ),
     mainPanel(
       uiOutput("article")
@@ -218,10 +306,41 @@ train_page <- tabItem(
   )
 )
 
-# Explore page
+# Explore Recommendations page
 explore_page <- tabItem(
   tabName = "explore",
-  h1("Explore Recommended News")
+  h1("Explore Recommended News"),
+  sidebarLayout(
+    sidebarPanel(
+      h3("Instructions"),
+      p("This is where you get your recommendations"),
+      selectInput(inputId = "rectype", label = "News Type", 
+                  choices = c("Top Headlines", "All Articles"),
+                  selected = "Top Headlines"),
+      hr(),
+      h3("Filters"),
+      uiOutput("controls"),
+      div(
+        class = "text-center",
+        actionButton(inputId = "give", label = "Give Me Recommendations"),
+        br(),
+        br(),
+        shinyjs::hidden(
+          div(
+            id = "inputs_all",
+            p(class = "text-center error", "Please enter a keyword to get recommendations.")
+          ),
+          div(
+            id = "inputs_top",
+            p(class = "text-center error", "Please enter a keyword, a country, or a category.")
+          )
+        )
+      )
+    ),
+    mainPanel(
+      uiOutput("recommend")
+    )
+  )
 )
 
 # How It Works page
@@ -233,13 +352,39 @@ how_page <- tabItem(
 # About page
 about_page <- tabItem(
   tabName = "about",
-  h1("About the System")
+  h1("About the System"),
+  p("Made by M.C. Girjau and S. Gurung")
 )
 
 # #############################################################################
 #
-# Experimental code for web scraping, to eliminate dependency on Diffbot
-# !!! DO NOT EDIT OR UNCOMMENT !!!
+# MODEL
+#
+# #############################################################################
+
+# Logistic regression model to predict if user will like article or not
+.fit_model <- function() {
+  username <- Sys.getenv("USERNAME")
+  con <- mongolite::mongo(collection = Sys.getenv("USERNAME"), db = "preferences", url = url)
+  preferences <- con$find()
+  model <- glm(opinion ~ ., data = preferences, family = binomial(logit),
+               na.action = na.exclude)
+  return(model)
+}
+
+# Function to give recommendations
+# .recommend
+
+# #############################################################################
+#
+# EXPERIMENTAL CODE - please disregard
+#
+# #############################################################################
+
+# #############################################################################
+#
+# # Experimental code for web scraping, to eliminate dependency on Diffbot
+# # !!! DO NOT EDIT OR UNCOMMENT !!!
 # 
 # library(RCurl)
 # library(XML)
