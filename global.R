@@ -12,10 +12,12 @@ library(httr)
 library(lubridate)
 library(mongolite) # MongoDB connection
 library(newspapr) # NewsAPI wrapper package
+library(promises) # asynchronous programming
 library(RCurl)
 library(readability) # readability scores
 library(RJSONIO)
 library(shiny)
+library(shinycssloaders)
 library(shinydashboard)
 library(shinyjs)
 library(stringr)
@@ -301,7 +303,7 @@ train_page <- tabItem(
       )
     ),
     mainPanel(
-      uiOutput("article")
+      withSpinner(uiOutput("article"), color = "purple")
     )
   )
 )
@@ -371,9 +373,6 @@ about_page <- tabItem(
                na.action = na.exclude)
   return(model)
 }
-
-# Function to give recommendations
-# .recommend
 
 # #############################################################################
 #
