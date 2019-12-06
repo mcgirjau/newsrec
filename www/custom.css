@@ -1,3 +1,5 @@
+/* dashboard header color: #605ca8 */
+
 #login-page {
   width: 400px; 
   max-width: 100%; 
@@ -41,4 +43,22 @@ a:hover {
 .article {
   border-right: 10px solid black;
   border-bottom: 10px solid black;
+}
+
+/*
+.well {
+  color: white;
+  background-color: #605ca8;
+  transition: transform 0.3s;
+  border-radius: 10px;
+}
+          
+.well:hover {
+  transform: scale(1.01);
+}
+*/
+
+.shiny-output-error,
+.shiny-output-error:before { 
+  visibility: hidden; 
 }

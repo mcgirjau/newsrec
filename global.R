@@ -6,13 +6,13 @@
 
 # Load required packages
 library(dplyr)
-library(future) # asynchronous programming
-library(future.apply) # asynchronous programming (apply functions)
+library(future) # asynchronous prrocessing
+library(future.apply) # asynchronous prrocessing (apply functions)
 library(httr)
 library(lubridate)
 library(mongolite) # MongoDB connection
 library(newspapr) # NewsAPI wrapper package
-library(promises) # asynchronous programming
+library(promises) # asynchronous prrocessing
 library(RCurl)
 library(readability) # readability scores
 library(RJSONIO)
@@ -24,7 +24,9 @@ library(stringr)
 library(tidyr)
 library(tidytext)
 
-# Setting up asynchronous programming so that the app doesn't lag
+set_config(config(ssl_verifypeer = 0L))
+
+# Setting up asynchronous prrocessing so that the app doesn't lag
 future::plan(multiprocess)
 
 # Links to where one can obtain API keys for NewsAPI and Diffbot
@@ -33,7 +35,7 @@ diffbot_url <- a("Diffbot API", href = "https://www.diffbot.com/plans/trial")
 
 # Link to the CSS style sheet (in www/ folder)
 head <- tags$head(
-  tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
+  tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
 )
 
 # MongoDB connection URL - DO NOT EDIT
@@ -222,6 +224,7 @@ url <- paste0("mongodb://admin:example@", # authentication
 login_page <- div(
   id = "login-page", # for the CSS file
   wellPanel(
+    class = "well",
     tags$h2("Log In or Sign Up", class = "text-center"),
     textInput(inputId = "username", 
               placeholder = "Username", 

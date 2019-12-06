@@ -153,11 +153,20 @@ server <- function(input, output, session) {
     counter$i <- counter$i + 1
   })
   
+  ready_to_train <- eventReactive(input$generate, {
+    if (input$train_keyword != "") {
+      return(TRUE)
+    } else {
+      return(FALSE)
+    }
+  }, ignoreNULL = FALSE)
+  
   # Training articles output
   output$article <- renderUI({
-    if (input$train_keyword != "" && input$generate > 0) {
+    if (ready_to_train()) {
       if (counter$i <= nrow(training_set())) {
         wellPanel(
+          class = "well",
           h2(a(current_article()$title, href = current_article()$url)),
           h4(paste("by", current_article()$author)),
           h4(paste("Source:", current_article()$source)),
@@ -360,20 +369,30 @@ server <- function(input, output, session) {
       articles <- newspapr::get_everything(keyword = keyword, title_keyword = title_keyword, 
                                            language = language, page_size = 5)
     }
+    if (nrow(articles) != 0) {
+      articles <- articles %>% 
+        mutate(author = tidyr::replace_na(author, "Unknown"),
+               source = tidyr::replace_na(source, "Unknown"),
+               published_at = parse_date_time(published_at, orders = "ymd-HMS") %>%
+                 {stamp("Jan 1, 2000 at 22:10")(.)})
+    }
     return(articles)
   })
   
   recommendation <- reactive({
     username <- Sys.getenv("USERNAME")
-    con <- mongolite::mongo(collection = Sys.getenv("USERNAME"), db = "preferences", url = url)
+    con <- mongolite::mongo(collection = username, db = "preferences", url = url)
     preferences <- con$find()
-    # Check if system has been trained
-    if (nrow(preferences) == 0) {
+    model <- .fit_model()
+    metrics <- .get_metrics(article_pool()) %>%
+      mutate_all(as.numeric)
+    # Check if system has been trained and if current metrics are valid
+    if (nrow(preferences) == 0 || all(is.na(metrics))) {
       # if not, then just suggest top article from pool
-      return(article_pool()[1, ])
+      result <- cbind(article_pool(), pred_prob = NA) %>%
+        head(n = 1)
+      return(result)
     } else {
-      model <- .fit_model()
-      metrics <- .get_metrics(article_pool())
       predictions <- predict(model, newdata = metrics, type = "response")
       result <- bind_cols(article_pool(), metrics, pred_prob = predictions) %>%
         arrange(desc(pred_prob)) %>%
@@ -393,6 +412,7 @@ server <- function(input, output, session) {
         )
       } else {
         wellPanel(
+          class = "well",
           h2(a(recommendation()$title, href = recommendation()$url)),
           h4(paste("by", recommendation()$author)),
           h4(paste("Source:", recommendation()$source)),
@@ -408,15 +428,10 @@ server <- function(input, output, session) {
             )
           ),
           hr(),
-          div(
-            class = "text-center",
-            radioButtons(inputId = "like", label = "Do you like this article?",
-                         choices = c("Yes", "No"), inline = TRUE)
-          ),
-          div(
-            class = "text-center",
-            actionButton(inputId = "ratee", label = "Submit Rating")
-          )
+          if (!is.na(recommendation()$pred_prob)) {
+            h4(paste("Predicted probability that you'll like this article is", 
+                     round(recommendation()$pred_prob, 3)))
+          }
         )
       }
     } else {
