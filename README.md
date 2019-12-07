@@ -51,6 +51,16 @@ if (length(missing_packages) > 0) {
 devtools::install_github("mcgirjau/newspapr")
 ```
 
+## Installation
+
+A version of the News Recommendation System will be soon deployed to
+shinyapps.io. For now, you can test out the current GitHub version of
+the app by running the following command in your R console:
+
+``` r
+shiny::runGitHub(repo = "newsrec", username = "mcgirjau", subdir = "app/")
+```
+
 ## Usage
 
 …coming soon
