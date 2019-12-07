@@ -21,7 +21,7 @@ A news recommendation system written in R and deployed as a Shiny web applicatio
 To use the News Recommendation System, you need two API keys:
 
 - A [NewsAPI](https://newsapi.org/) key for pulling in news. This API offers a free plan, which comes with [limitations](https://newsapi.org/pricing), e.g. a maximum of 500 requests per day, and new articles available with a 15-minute delay. A key can be obtained [here](https://newsapi.org/register).
-- A [Diffbot Article API](https://www.diffbot.com/products/automatic/#article) key for the web extraction of article contents. This API offers a 14-day free trial, with [limitations](https://www.diffbot.com/pricing/) like only 10,000 included requests, and a maximum of 1 request per second. A key can be obtained [here](https://www.diffbot.com/plans/trial), and a credit card is not necessary for the free trial.
+- A [Diffbot Article API](https://www.diffbot.com/products/automatic/#article) key for the web extraction of article contents. This API offers a 14-day free trial, with [limitations](https://www.diffbot.com/pricing/) like only 10,000 included requests, and a maximum of 1 request per second. A key can be obtained [here](https://www.diffbot.com/plans/trial), (note that a credit card is not necessary for the free trial).
 
 ### Package Dependencies
 
@@ -54,10 +54,33 @@ shiny::runGitHub(repo = "newsrec", username = "mcgirjau", subdir = "app/")
 
 ## Usage
 
-...coming soon
+There are 3 main steps you need to follow in order to successfully use the News Recommendation System:
+
+#### 1. Log In / Sign Up
+
+Upon running the app, you will be taken to an authentication screen. If you already have an account, simply enter your credentials (username and password), and log in. If you don't yet have an account, you can create one by choosing some username and password as well as entering your two API keys, and then sign up.
+    
+#### 2. Train the System
+
+Once logged in, you will be taken to the system training page, where you can search for articles based on some keyword, and then indicate whether you like them or not. It is recommended that you indicate your preferences over at least 10-20 articles.
+
+#### 3. Explore Recommended News
+
+In the sidebar to your left, you can now navigate to the page where the system issues you with recommendations. You have more control over news filtering here - you can select whether you want to search only the current top headlines, or all articles, and you can search by keyword, language, category etc. The system will pick the best article tailored to your preferences, and recommend it. Please be patient, as the system might take a while to determine the best article for you.
+
+## Technology
 
 ## Bug Reports
 
 If you find a bug as you run the application, please [open an issue](https://github.com/mcgirjau/newsrec/issues) to report it.
 
 </div>
+
+## Future Improvements
+
+The following are desirable new features or design tweaks that will possibly be introduced in future versions of the app:
+
+* Edit appearance
+* Add an option for the user to flush the system if they'd like to start over
+* Eliminate dependency on the Diffbot API and replace it with a versatile web scraping alternative 
+

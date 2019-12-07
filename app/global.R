@@ -34,9 +34,10 @@ future::plan(multiprocess)
 .newsapi_url <- a("NewsAPI", href = "https://newsapi.org/register")
 .diffbot_url <- a("Diffbot API", href = "https://www.diffbot.com/plans/trial")
 
-# Link to the CSS style sheet (in www/ folder)
+# Link to the CSS stylesheet and JavaScript scripts (in www/ folder)
 .head <- tags$head(
-  tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+  tags$link(rel = "stylesheet", type = "text/css", href = "custom.css"),
+  tags$script(src = "enter-button.js")
 )
 
 # MongoDB connection URL - DO NOT EDIT
@@ -246,7 +247,7 @@ future::plan(multiprocess)
     div(
       class = "text-center",
       div(
-        actionButton(inputId = "login", class = "button", "LOG IN"),
+        actionButton(inputId = "login", class = "button login", "LOG IN"),
         actionButton(inputId = "signup", class = "button", "SIGN UP"),
       ),
       br(),
@@ -294,7 +295,7 @@ future::plan(multiprocess)
                 placeholder = "e.g. Joe Biden"),
       div(
         class = "text-center",
-        actionButton(inputId = "generate", label = "Generate Training Set"),
+        actionButton(inputId = "generate", class = "button generate", label = "Generate Training Set"),
         br(),
         br(),
         # Potential rrors
@@ -329,7 +330,7 @@ future::plan(multiprocess)
       uiOutput("controls"),
       div(
         class = "text-center",
-        actionButton(inputId = "give", label = "Give Me Recommendations"),
+        actionButton(inputId = "give", class = "button", label = "Give Me Recommendations"),
         br(),
         br(),
         shinyjs::hidden(

@@ -353,7 +353,7 @@ server <- function(input, output, session) {
         category <- isolate(input$explore_category)
       }
       articles <- newspapr::get_top_headlines(keyword = keyword, country = country, 
-                                              category = category, page_size = 5)
+                                              category = category)
     } else if (input$rectype == "All Articles") {
       if (input$explore_keyword_all != "") {
         keyword <- isolate(input$explore_keyword_all)
@@ -365,7 +365,7 @@ server <- function(input, output, session) {
         language <- isolate(input$explore_language)
       }
       articles <- newspapr::get_everything(keyword = keyword, title_keyword = title_keyword, 
-                                           language = language, page_size = 5)
+                                           language = language)
     }
     if (nrow(articles) != 0) {
       articles <- articles %>% 
@@ -379,7 +379,7 @@ server <- function(input, output, session) {
   
   recommendation <- reactive({
     username <- Sys.getenv("USERNAME")
-    con <- mongolite::mongo(collection = username, db = "preferences", url = url)
+    con <- mongolite::mongo(collection = username, db = "preferences", url = .url)
     preferences <- con$find()
     model <- .fit_model()
     metrics <- .get_metrics(article_pool()) %>%
