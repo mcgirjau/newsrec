@@ -29,7 +29,6 @@ server <- function(input, output, session) {
         id = "sidebar",
         menuItem("Train", tabName = "train", icon = icon("brain")),
         menuItem("Explore", tabName = "explore", icon = icon("newspaper")),
-        menuItem("How It Works", tabName = "how", icon = icon("question-circle")),
         menuItem("About", tabName = "about", icon = icon("info-circle"))
       )
     }
@@ -38,13 +37,12 @@ server <- function(input, output, session) {
   output$body <- renderUI({
     if (USER$logged_in) {
       tabItems(
-        train_page,
-        explore_page,
-        how_page,
-        about_page
+        .train_page,
+        .explore_page,
+        .about_page
       )
     } else {
-      login_page
+      .login_page
     }
   })
   

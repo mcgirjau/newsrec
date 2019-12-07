@@ -5,8 +5,8 @@
 
 # News Recommendation System
 
-A news recommendation system written in R and deployed as an online
-Shiny application.
+A news recommendation system written in R and deployed as a Shiny web
+application.
 
 ## Requirements
 
@@ -64,5 +64,10 @@ shiny::runGitHub(repo = "newsrec", username = "mcgirjau", subdir = "app/")
 ## Usage
 
 …coming soon
+
+## Bug Reports
+
+If you find a bug as you run the application, please [open an
+issue](https://github.com/mcgirjau/newsrec/issues) to report it.
 
 </div>

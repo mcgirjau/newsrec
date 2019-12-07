@@ -31,16 +31,16 @@ set_config(config(ssl_verifypeer = 0L))
 future::plan(multiprocess)
 
 # Links to where one can obtain API keys for NewsAPI and Diffbot
-newsapi_url <- a("NewsAPI", href = "https://newsapi.org/register")
-diffbot_url <- a("Diffbot API", href = "https://www.diffbot.com/plans/trial")
+.newsapi_url <- a("NewsAPI", href = "https://newsapi.org/register")
+.diffbot_url <- a("Diffbot API", href = "https://www.diffbot.com/plans/trial")
 
 # Link to the CSS style sheet (in www/ folder)
-head <- tags$head(
+.head <- tags$head(
   tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
 )
 
 # MongoDB connection URL - DO NOT EDIT
-url <- paste0("mongodb://admin:example@", # authentication
+.url <- paste0("mongodb://admin:example@", # authentication
               "newsrec-shard-00-00-t0scv.mongodb.net:27017,", # host 1 & port
               "newsrec-shard-00-01-t0scv.mongodb.net:27017,", # host 2 & port
               "newsrec-shard-00-02-t0scv.mongodb.net:27017", # host 3 & port
@@ -59,7 +59,7 @@ url <- paste0("mongodb://admin:example@", # authentication
 
 # Function to check if a username already exists in the MongoDB database
 .username_exists <- function(u) {
-  con <- mongolite::mongo(collection = "users", db = "users", url = url)
+  con <- mongolite::mongo(collection = "users", db = "users", url = .url)
   users <- con$find()
   if (u %in% users$username) {
     return(TRUE)
@@ -70,7 +70,7 @@ url <- paste0("mongodb://admin:example@", # authentication
 
 # Function to check for valid user in MongoDB database
 .verify <- function(u, p) {
-  con <- mongolite::mongo(collection = "users", db = "users", url = url)
+  con <- mongolite::mongo(collection = "users", db = "users", url = .url)
   users <- con$find()
   if (u %in% users$username) {
     current_user <- users %>%
@@ -85,7 +85,7 @@ url <- paste0("mongodb://admin:example@", # authentication
 # Function to register a user in MongoDB database
 .register <- function(u, p, news_key, diffbot_key) {
   # Add user to 'users' collection
-  con <- mongolite::mongo(collection = "users", db = "users", url = url)
+  con <- mongolite::mongo(collection = "users", db = "users", url = .url)
   user <- data.frame(
     username = u, 
     password = p, 
@@ -97,7 +97,7 @@ url <- paste0("mongodb://admin:example@", # authentication
 
 # Function to set the current user's API keys as environment variables
 .set_environment <- function(u) {
-  con <- mongo(collection = "users", db = "users", url = url)
+  con <- mongo(collection = "users", db = "users", url = .url)
   users <- con$find()    
   current_user <- users %>%
     filter(username == u)
@@ -135,7 +135,7 @@ url <- paste0("mongodb://admin:example@", # authentication
                               afinn_score = .get_sentiment(text)) %>%
       mutate_all(replace_na, 0)
     # Submit to database only if content isn't empty
-    con <- mongolite::mongo(collection = Sys.getenv("USERNAME"), db = "preferences", url = url)
+    con <- mongolite::mongo(collection = Sys.getenv("USERNAME"), db = "preferences", url = .url)
     con$insert(article_data)
   }
 }
@@ -222,7 +222,7 @@ url <- paste0("mongodb://admin:example@", # authentication
 # #############################################################################
 
 # Login page
-login_page <- div(
+.login_page <- div(
   id = "login-page", # for the CSS file
   wellPanel(
     class = "well",
@@ -234,7 +234,7 @@ login_page <- div(
                   placeholder = "Password", 
                   label = tagList(icon("unlock-alt"), "Password")),
     tagList("If you're signing up, you also need to provide valid API keys for", 
-            newsapi_url, "and", diffbot_url, "in the fields below."),
+            .newsapi_url, "and", .diffbot_url, "in the fields below."),
     br(),
     br(),
     textInput(inputId = "newsapi", 
@@ -279,7 +279,7 @@ login_page <- div(
 )
 
 # Training page
-train_page <- tabItem(
+.train_page <- tabItem(
   tabName = "train",
   class = "active",
   h1("Train the System"),
@@ -314,7 +314,7 @@ train_page <- tabItem(
 )
 
 # Explore Recommendations page
-explore_page <- tabItem(
+.explore_page <- tabItem(
   tabName = "explore",
   h1("Explore Recommended News"),
   sidebarLayout(
@@ -351,14 +351,8 @@ explore_page <- tabItem(
   )
 )
 
-# How It Works page
-how_page <- tabItem(
-  tabName = "how",
-  h1("How the System Works")
-)
-
 # About page
-about_page <- tabItem(
+.about_page <- tabItem(
   tabName = "about",
   h1("About the System"),
   p("Made by M.C. Girjau and S. Gurung")
@@ -373,7 +367,7 @@ about_page <- tabItem(
 # Logistic regression model to predict if user will like article or not
 .fit_model <- function() {
   username <- Sys.getenv("USERNAME")
-  con <- mongolite::mongo(collection = Sys.getenv("USERNAME"), db = "preferences", url = url)
+  con <- mongolite::mongo(collection = Sys.getenv("USERNAME"), db = "preferences", url = .url)
   preferences <- con$find()
   model <- glm(opinion ~ ., data = preferences, family = binomial(logit),
                na.action = na.exclude)
