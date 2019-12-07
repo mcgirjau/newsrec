@@ -24,9 +24,10 @@ library(stringr)
 library(tidyr)
 library(tidytext)
 
+# Set configuration
 set_config(config(ssl_verifypeer = 0L))
 
-# Setting up asynchronous prrocessing so that the app doesn't lag
+# Set up asynchronous prrocessing so that the app doesn't lag
 future::plan(multiprocess)
 
 # Links to where one can obtain API keys for NewsAPI and Diffbot
@@ -296,7 +297,7 @@ train_page <- tabItem(
         actionButton(inputId = "generate", label = "Generate Training Set"),
         br(),
         br(),
-        # Potential login errors
+        # Potential rrors
         shinyjs::hidden(
           div(
             id = "notfound",
@@ -306,6 +307,7 @@ train_page <- tabItem(
       )
     ),
     mainPanel(
+      # Add loading spinner
       withSpinner(uiOutput("article"), color = "purple")
     )
   )
@@ -343,6 +345,7 @@ explore_page <- tabItem(
       )
     ),
     mainPanel(
+      # Add loading spinner
       withSpinner(uiOutput("recommend"), type = 1, color = "purple")
     )
   )
