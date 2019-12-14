@@ -8,5 +8,5 @@ ui <- dashboardPage(
   header = dashboard_header,
   sidebar = dashboard_sidebar,
   body = dashboard_body,
-  skin = "yellow"
+  skin = "purple"
 )

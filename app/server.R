@@ -144,7 +144,7 @@ server <- function(input, output, session) {
   observeEvent(input$rate, {
     current_url <- current_article()$url
     liked <- ifelse(input$like == "Yes", 1, 0)
-    # Using asynchronous programming
+    # Creating a future
     future({
       .get_text(current_url)
     }) %...>% .submit(liked)
