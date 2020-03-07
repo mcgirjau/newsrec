@@ -91,7 +91,7 @@ language, category etc. The system will pick the best article tailored
 to your preferences, and recommend it. Please be patient, as the system
 might take a while to determine the best article for you.
 
-## Technology
+<!-- ## Technology -->
 
 ## Bug Reports
 
